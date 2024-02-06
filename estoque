@@ -1,0 +1,209 @@
+import tkinter as tk
+from tkinter import messagebox
+
+class Produto:
+    def __init__(self, nome, preco_compra, preco_venda, quantidade):
+        self.nome = nome
+        self.preco_compra = preco_compra
+        self.preco_venda = preco_venda
+        self.quantidade = quantidade
+
+class Loja:
+    def __init__(self):
+        self.produtos = []
+
+    def adicionar_produto(self, produto):
+        self.produtos.append(produto)
+
+    def calcular_lucro(self):
+        lucro_total = 0
+        for produto in self.produtos:
+            lucro_total += (produto.preco_venda - produto.preco_compra) * produto.quantidade
+        return lucro_total
+
+    def calcular_gastos(self):
+        gastos_total = 0
+        for produto in self.produtos:
+            gastos_total += produto.preco_compra * produto.quantidade
+        return gastos_total
+
+    def calcular_estoque(self):
+        estoque_total = 0
+        for produto in self.produtos:
+            estoque_total += produto.quantidade
+        return estoque_total
+
+class Interface:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Sistema de Gestão de Loja")
+
+        self.loja = Loja()
+
+        self.frame_adicionar_produto = tk.Frame(self.root)
+        self.frame_adicionar_produto.pack(pady=10)
+
+        tk.Label(self.frame_adicionar_produto, text="Nome do Produto:").grid(row=0, column=0)
+        self.nome_produto_entry = tk.Entry(self.frame_adicionar_produto)
+        self.nome_produto_entry.grid(row=0, column=1)
+
+        tk.Label(self.frame_adicionar_produto, text="Preço de Compra:").grid(row=1, column=0)
+        self.preco_compra_entry = tk.Entry(self.frame_adicionar_produto)
+        self.preco_compra_entry.grid(row=1, column=1)
+
+        tk.Label(self.frame_adicionar_produto, text="Preço de Venda:").grid(row=2, column=0)
+        self.preco_venda_entry = tk.Entry(self.frame_adicionar_produto)
+        self.preco_venda_entry.grid(row=2, column=1)
+
+        tk.Label(self.frame_adicionar_produto, text="Quantidade:").grid(row=3, column=0)
+        self.quantidade_entry = tk.Entry(self.frame_adicionar_produto)
+        self.quantidade_entry.grid(row=3, column=1)
+
+        self.botao_adicionar_produto = tk.Button(self.frame_adicionar_produto, text="Adicionar Produto", command=self.adicionar_produto)
+        self.botao_adicionar_produto.grid(row=4, columnspan=2)
+
+        self.frame_resultados = tk.Frame(self.root)
+        self.frame_resultados.pack(pady=10)
+
+        self.botao_calcular = tk.Button(self.frame_resultados, text="Calcular", command=self.mostrar_resultados)
+        self.botao_calcular.grid(row=0, column=0)
+
+        self.resultados_text = tk.Text(self.frame_resultados, width=40, height=10)
+        self.resultados_text.grid(row=1, column=0)
+
+    def adicionar_produto(self):
+        nome = self.nome_produto_entry.get()
+        preco_compra = float(self.preco_compra_entry.get())
+        preco_venda = float(self.preco_venda_entry.get())
+        quantidade = int(self.quantidade_entry.get())
+
+        produto = Produto(nome, preco_compra, preco_venda, quantidade)
+        self.loja.adicionar_produto(produto)
+
+        messagebox.showinfo("Sucesso", "Produto adicionado com sucesso!")
+
+        self.nome_produto_entry.delete(0, tk.END)
+        self.preco_compra_entry.delete(0, tk.END)
+        self.preco_venda_entry.delete(0, tk.END)
+        self.quantidade_entry.delete(0, tk.END)
+
+    def mostrar_resultados(self):
+        lucro = self.loja.calcular_lucro()
+        gastos = self.loja.calcular_gastos()
+        estoque = self.loja.calcular_estoque()
+
+        resultados = f"Lucro: R${lucro:.2f}\nGastos: R${gastos:.2f}\nEstoque: {estoque} unidades"
+        self.resultados_text.delete("1.0", tk.END)
+        self.resultados_text.insert(tk.END, resultados)
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = Interface(root)
+    root.mainloop()
+    
+    import tkinter as tk
+import sqlite3
+from tkinter import messagebox
+
+class Loja:
+    def __init__(self, db_filename):
+        self.conn = sqlite3.connect(db_filename)
+        self.c = self.conn.cursor()
+        self.c.execute('''CREATE TABLE IF NOT EXISTS produtos (
+                            id INTEGER PRIMARY KEY,
+                            nome TEXT,
+                            preco_compra REAL,
+                            preco_venda REAL,
+                            quantidade INTEGER
+                        )''')
+        self.conn.commit()
+
+    def adicionar_produto(self, nome, preco_compra, preco_venda, quantidade):
+        self.c.execute("INSERT INTO produtos (nome, preco_compra, preco_venda, quantidade) VALUES (?, ?, ?, ?)",
+                       (nome, preco_compra, preco_venda, quantidade))
+        self.conn.commit()
+
+    def calcular_lucro(self):
+        self.c.execute("SELECT SUM((preco_venda - preco_compra) * quantidade) FROM produtos")
+        lucro = self.c.fetchone()[0]
+        return lucro if lucro else 0
+
+    def calcular_gastos(self):
+        self.c.execute("SELECT SUM(preco_compra * quantidade) FROM produtos")
+        gastos = self.c.fetchone()[0]
+        return gastos if gastos else 0
+
+    def calcular_estoque(self):
+        self.c.execute("SELECT SUM(quantidade) FROM produtos")
+        estoque = self.c.fetchone()[0]
+        return estoque if estoque else 0
+
+class Interface:
+    def __init__(self, root, loja):
+        self.root = root
+        self.root.title("Sistema de Gestão de Loja")
+
+        self.loja = loja
+
+        self.frame_adicionar_produto = tk.Frame(self.root)
+        self.frame_adicionar_produto.pack(pady=10)
+
+        tk.Label(self.frame_adicionar_produto, text="Nome do Produto:").grid(row=0, column=0)
+        self.nome_produto_entry = tk.Entry(self.frame_adicionar_produto)
+        self.nome_produto_entry.grid(row=0, column=1)
+
+        tk.Label(self.frame_adicionar_produto, text="Preço de Compra:").grid(row=1, column=0)
+        self.preco_compra_entry = tk.Entry(self.frame_adicionar_produto)
+        self.preco_compra_entry.grid(row=1, column=1)
+
+        tk.Label(self.frame_adicionar_produto, text="Preço de Venda:").grid(row=2, column=0)
+        self.preco_venda_entry = tk.Entry(self.frame_adicionar_produto)
+        self.preco_venda_entry.grid(row=2, column=1)
+
+        tk.Label(self.frame_adicionar_produto, text="Quantidade:").grid(row=3, column=0)
+        self.quantidade_entry = tk.Entry(self.frame_adicionar_produto)
+        self.quantidade_entry.grid(row=3, column=1)
+
+        self.botao_adicionar_produto = tk.Button(self.frame_adicionar_produto, text="Adicionar Produto", command=self.adicionar_produto)
+        self.botao_adicionar_produto.grid(row=4, columnspan=2)
+
+        self.frame_resultados = tk.Frame(self.root)
+        self.frame_resultados.pack(pady=10)
+
+        self.botao_calcular = tk.Button(self.frame_resultados, text="Calcular", command=self.mostrar_resultados)
+        self.botao_calcular.grid(row=0, column=0)
+
+        self.resultados_text = tk.Text(self.frame_resultados, width=40, height=10)
+        self.resultados_text.grid(row=1, column=0)
+
+    def adicionar_produto(self):
+        nome = self.nome_produto_entry.get()
+        preco_compra = float(self.preco_compra_entry.get())
+        preco_venda = float(self.preco_venda_entry.get())
+        quantidade = int(self.quantidade_entry.get())
+
+        self.loja.adicionar_produto(nome, preco_compra, preco_venda, quantidade)
+
+        messagebox.showinfo("Sucesso", "Produto adicionado com sucesso!")
+
+        self.nome_produto_entry.delete(0, tk.END)
+        self.preco_compra_entry.delete(0, tk.END)
+        self.preco_venda_entry.delete(0, tk.END)
+        self.quantidade_entry.delete(0, tk.END)
+
+    def mostrar_resultados(self):
+        lucro = self.loja.calcular_lucro()
+        gastos = self.loja.calcular_gastos()
+        estoque = self.loja.calcular_estoque()
+
+        resultados = f"Lucro: R${lucro:.2f}\nGastos: R${gastos:.2f}\nEstoque: {estoque} unidades"
+        self.resultados_text.delete("1.0", tk.END)
+        self.resultados_text.insert(tk.END, resultados)
+
+if __name__ == "__main__":
+    db_filename = 'loja.db'
+    root = tk.Tk()
+    loja = Loja(db_filename)
+    app = Interface(root, loja)
+    root.mainloop()
+    
